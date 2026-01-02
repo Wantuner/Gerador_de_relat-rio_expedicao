@@ -1,0 +1,245 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* BACKGROUND */
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0d47a1, #1976d2);
+  padding: 20px;
+  color: #fff;
+}
+
+/* GLASS BASE */
+.glass {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(14px);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.25);
+}
+
+/* CONTAINER */
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 25px;
+}
+
+h1, h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* FORMULÁRIO */
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+  gap: 16px;
+  padding: 20px;
+}
+
+input, select {
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
+
+input::placeholder {
+  color: rgba(255,255,255,.8);
+}
+
+/* BOTÕES */
+.botoes {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn {
+  padding: 12px 22px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,.3);
+}
+
+.primary { background: #1e88e5; color: #fff; }
+.secondary { background: #43a047; color: #fff; }
+.warning { background: #fbc02d; color: #333; }
+
+/* LISTA DE NOTAS */
+.lista {
+  margin-top: 35px;
+}
+
+.grid-notas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+  gap: 18px;
+}
+
+/* CARD DA NOTA */
+.nota-card {
+  background: rgba(255,255,255,0.18);
+  border-radius: 18px;
+  padding: 18px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nota-card strong {
+  font-size: 16px;
+}
+
+.nota-card .valor {
+  margin-top: auto;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+/* AÇÕES */
+.nota-acoes {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+.nota-acoes button {
+  background: rgba(255,255,255,.25);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: #fff;
+}
+
+/* TOAST */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  opacity: 0;
+  transition: .4s;
+  z-index: 9999;
+}
+
+#toast.show { opacity: 1; }
+#toast.sucesso { background: #2e7d32; }
+#toast.aviso { background: #f9a825; }
+#toast.erro { background: #c62828; }
+
+/* RESPONSIVO */
+@media (max-width: 600px) {
+  .botoes {
+    flex-direction: column;
+  }
+}
+
+/* ==========================
+   EFEITO DE LUZ NOS BOTÕES
+========================== */
+
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* FEIXE DE LUZ */
+.btn::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -120%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.153),
+    transparent
+  );
+  transform: skewX(-20deg);
+
+  /* ANIMAÇÃO INFINITA */
+  animation: luzBotao 3s linear infinite;
+}
+
+/* PAUSA AO PASSAR O MOUSE (opcional) */
+.btn:hover::after {
+  animation-play-state: paused;
+}
+
+/* KEYFRAMES */
+@keyframes luzBotao {
+  from {
+    left: -120%;
+  }
+  to {
+    left: 120%;
+  }
+}
+
+/* SELECT */
+select {
+  background: rgba(30, 136, 229, 0.85); /* azul base */
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* OPÇÕES DO SELECT */
+select option {
+  background-color: #1565c0; /* azul mais escuro */
+  color: #ffffff;
+}
+
+/* OPÇÃO DESABILITADA (placeholder) */
+select option[value=""] {
+  color: #bbdefb;
+}
+
+/* FOCO */
+select:focus {
+  outline: 2px solid rgba(255,255,255,0.6);
+}
+
+.icone {
+  width: 32px;      /* largura */
+  height: 32px;     /* altura */
+  margin: 10px;     /* espaçamento externo */
+}
+.titulo {
+  display: flex;
+  align-items: center;      /* alinha verticalmente */
+  justify-content: center;  /* centraliza tudo */
+  gap: 12px;                /* espaço entre ícone e texto */
+}
+
+.icone-titulo {
+  width: 46px;   /* tamanho do ícone */
+  height: 46px;
+  object-fit: contain;
+}
+.icone-titulo {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
