@@ -1,3 +1,17 @@
+/* ==========================
+   SUPABASE
+========================== */
+const supabaseUrl = 'https://tljfrgxcplqfzxxilriw.supabase.co';
+const supabaseKey = 'sb_publishable_KNzNTWkUthMHca4_jfKzNw_rUYvbFtl';
+
+const supabaseClient = window.supabase.createClient(
+  supabaseUrl,
+  supabaseKey
+);
+
+/* ==========================
+   ELEMENTOS
+========================== */
 const cliente = document.getElementById("cliente");
 const nf = document.getElementById("nf");
 const pedido = document.getElementById("pedido");
@@ -12,11 +26,11 @@ const btnPDF = document.getElementById("btnPDF");
 const listaNotas = document.getElementById("listaNotas");
 const toast = document.getElementById("toast");
 
-let notas = JSON.parse(localStorage.getItem("notas")) || [];
+let notas = [];
 let editId = null;
 
 /* ==========================
-   FORMATADOR DE MOEDA (BR)
+   FORMATADOR DE MOEDA
 ========================== */
 const formatarMoeda = (valor) => {
   return new Intl.NumberFormat("pt-BR", {
@@ -36,7 +50,7 @@ function mostrarToast(msg, tipo) {
 }
 
 /* ==========================
-   LIMPAR FORMULÁRIO
+   LIMPAR FORM
 ========================== */
 btnLimpar.onclick = () => {
   cliente.value = "";
@@ -49,7 +63,7 @@ btnLimpar.onclick = () => {
 };
 
 /* ==========================
-   RENDERIZAR NOTAS
+   RENDER
 ========================== */
 function render() {
   listaNotas.innerHTML = "";
@@ -58,15 +72,15 @@ function render() {
     const card = document.createElement("div");
     card.className = "nota-card";
 
-    const dataFormatada = new Date(n.data).toLocaleDateString("pt-BR");
+    const dataFormatada = new Date(n.created_at).toLocaleDateString("pt-BR");
 
     card.innerHTML = `
       <strong>${n.cliente}</strong>
       <div class="data-nota">📅 ${dataFormatada}</div>
-      <div>NF: ${n.nf}</div>
-      <div>Pedido: ${n.pedido}</div>
-      <div>Volumes: ${n.volumes}</div>
-      <div>Caixa: ${n.caixa}</div>
+      <div><strong>NF:</strong> ${n.nf}</div>
+      <div><strong>Pedido:</strong> ${n.pedido}</div>
+      <div><strong>Volumes:</strong> ${n.volumes}</div>
+      <div><strong>Caixa:</strong> ${n.caixa}</div>
       <div class="valor">${formatarMoeda(n.valor)}</div>
 
       <div class="nota-acoes">
@@ -80,9 +94,28 @@ function render() {
 }
 
 /* ==========================
-   ADICIONAR / EDITAR NOTA
+   CARREGAR NOTAS (SELECT)
 ========================== */
-btnAdicionar.onclick = () => {
+async function carregarNotas() {
+  const { data, error } = await supabaseClient
+    .from('relatorios_expedicao')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Erro ao carregar notas", "erro");
+    return;
+  }
+
+  notas = data;
+  render();
+}
+
+/* ==========================
+   ADICIONAR / EDITAR (INSERT / UPDATE)
+========================== */
+btnAdicionar.onclick = async () => {
 
   if (!cliente.value || !nf.value || !pedido.value || !volumes.value || !valor.value || !caixa.value) {
     mostrarToast("Preencha todos os campos", "aviso");
@@ -95,37 +128,54 @@ btnAdicionar.onclick = () => {
   }
 
   if (editId) {
-    const nota = notas.find(n => n.id === editId);
-    Object.assign(nota, {
-      cliente: cliente.value,
-      nf: nf.value,
-      pedido: pedido.value,
-      volumes: volumes.value,
-      valor: Number(valor.value),
-      caixa: caixa.value
-    });
+    const { error } = await supabaseClient
+      .from('relatorios_expedicao')
+      .update({
+        cliente: cliente.value,
+        nf: nf.value,
+        pedido: pedido.value,
+        volumes: volumes.value,
+        valor: Number(valor.value),
+        caixa: caixa.value
+      })
+      .eq('id', editId);
+
+    if (error) {
+      console.error(error);
+      mostrarToast("Erro ao atualizar nota", "erro");
+      return;
+    }
+
+    mostrarToast("Nota atualizada", "sucesso");
     editId = null;
+
   } else {
-    notas.push({
-      id: Date.now(),
-      cliente: cliente.value,
-      nf: nf.value,
-      pedido: pedido.value,
-      volumes: volumes.value,
-      valor: Number(valor.value),
-      caixa: caixa.value,
-      data: new Date().toISOString()
-    });
+    const { error } = await supabaseClient
+      .from('relatorios_expedicao')
+      .insert([{
+        cliente: cliente.value,
+        nf: nf.value,
+        pedido: pedido.value,
+        volumes: volumes.value,
+        valor: Number(valor.value),
+        caixa: caixa.value
+      }]);
+
+    if (error) {
+      console.error(error);
+      mostrarToast("Erro ao salvar nota", "erro");
+      return;
+    }
+
+    mostrarToast("Nota salva com sucesso", "sucesso");
   }
 
-  localStorage.setItem("notas", JSON.stringify(notas));
-  render();
-  mostrarToast("Nota salva com sucesso", "sucesso");
   btnLimpar.click();
+  carregarNotas();
 };
 
 /* ==========================
-   EDITAR NOTA
+   EDITAR
 ========================== */
 window.editar = (id) => {
   const n = notas.find(n => n.id === id);
@@ -139,17 +189,29 @@ window.editar = (id) => {
 };
 
 /* ==========================
-   EXCLUIR NOTA
+   EXCLUIR (DELETE)
 ========================== */
-window.excluir = (id) => {
-  notas = notas.filter(n => n.id !== id);
-  localStorage.setItem("notas", JSON.stringify(notas));
-  render();
+window.excluir = async (id) => {
+  const confirmar = confirm("Deseja realmente excluir esta nota?");
+  if (!confirmar) return;
+
+  const { error } = await supabaseClient
+    .from('relatorios_expedicao')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Erro ao excluir nota", "erro");
+    return;
+  }
+
   mostrarToast("Nota excluída", "aviso");
+  carregarNotas();
 };
 
 /* ==========================
-   GERAR PDF
+   PDF
 ========================== */
 btnPDF.onclick = () => {
   if (!notas.length) {
@@ -168,7 +230,7 @@ btnPDF.onclick = () => {
     head: [["Cliente", "Data", "NF", "Pedido", "Volumes", "Caixa", "Valor"]],
     body: notas.map(n => [
       n.cliente,
-      new Date(n.data).toLocaleDateString("pt-BR"),
+      new Date(n.created_at).toLocaleDateString("pt-BR"),
       n.nf,
       n.pedido,
       n.volumes,
@@ -181,6 +243,6 @@ btnPDF.onclick = () => {
 };
 
 /* ==========================
-   INICIALIZA
+   INIT
 ========================== */
-render();
+carregarNotas();
