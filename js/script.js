@@ -68,6 +68,11 @@ btnLimpar.onclick = () => {
 function render() {
   listaNotas.innerHTML = "";
 
+  if (!notas.length) {
+    listaNotas.innerHTML = "<p>Nenhuma nota cadastrada</p>";
+    return;
+  }
+
   notas.forEach(n => {
     const card = document.createElement("div");
     card.className = "nota-card";
@@ -100,7 +105,8 @@ async function carregarNotas() {
   const { data, error } = await supabaseClient
     .from('relatorios_expedicao')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(50); // 🔥 evita travamento no mobile
 
   if (error) {
     console.error(error);
@@ -113,7 +119,7 @@ async function carregarNotas() {
 }
 
 /* ==========================
-   ADICIONAR / EDITAR (INSERT / UPDATE)
+   ADICIONAR / EDITAR
 ========================== */
 btnAdicionar.onclick = async () => {
 
@@ -189,11 +195,10 @@ window.editar = (id) => {
 };
 
 /* ==========================
-   EXCLUIR (DELETE)
+   EXCLUIR
 ========================== */
 window.excluir = async (id) => {
-  const confirmar = confirm("Deseja realmente excluir esta nota?");
-  if (!confirmar) return;
+  mostrarToast("Excluindo nota...", "aviso");
 
   const { error } = await supabaseClient
     .from('relatorios_expedicao')
@@ -206,7 +211,7 @@ window.excluir = async (id) => {
     return;
   }
 
-  mostrarToast("Nota excluída", "aviso");
+  mostrarToast("Nota excluída", "sucesso");
   carregarNotas();
 };
 
@@ -219,27 +224,31 @@ btnPDF.onclick = () => {
     return;
   }
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  mostrarToast("Gerando PDF...", "aviso");
 
-  doc.text("Relatório de Expedição", 14, 16);
-  doc.text(`Data de emissão: ${new Date().toLocaleDateString("pt-BR")}`, 14, 22);
+  setTimeout(() => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-  doc.autoTable({
-    startY: 30,
-    head: [["Cliente", "Data", "NF", "Pedido", "Volumes", "Caixa", "Valor"]],
-    body: notas.map(n => [
-      n.cliente,
-      new Date(n.created_at).toLocaleDateString("pt-BR"),
-      n.nf,
-      n.pedido,
-      n.volumes,
-      n.caixa,
-      formatarMoeda(n.valor)
-    ])
-  });
+    doc.text("Relatório de Expedição", 14, 16);
+    doc.text(`Data de emissão: ${new Date().toLocaleDateString("pt-BR")}`, 14, 22);
 
-  doc.save("relatorio-expedicao.pdf");
+    doc.autoTable({
+      startY: 30,
+      head: [["Cliente", "Data", "NF", "Pedido", "Volumes", "Caixa", "Valor"]],
+      body: notas.map(n => [
+        n.cliente,
+        new Date(n.created_at).toLocaleDateString("pt-BR"),
+        n.nf,
+        n.pedido,
+        n.volumes,
+        n.caixa,
+        formatarMoeda(n.valor)
+      ])
+    });
+
+    doc.save("relatorio-expedicao.pdf");
+  }, 100);
 };
 
 /* ==========================
