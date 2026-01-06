@@ -68,14 +68,10 @@ btnLimpar.onclick = () => {
 function render() {
   listaNotas.innerHTML = "";
 
-  if (!notas.length) {
-    listaNotas.innerHTML = "<p>Nenhuma nota cadastrada</p>";
-    return;
-  }
-
   notas.forEach(n => {
     const card = document.createElement("div");
     card.className = "nota-card";
+    if (n.expedido) card.classList.add("expedido");
 
     const dataFormatada = new Date(n.created_at).toLocaleDateString("pt-BR");
 
@@ -89,8 +85,19 @@ function render() {
       <div class="valor">${formatarMoeda(n.valor)}</div>
 
       <div class="nota-acoes">
-        <button onclick="editar(${n.id})">✏️</button>
-        <button onclick="excluir(${n.id})">🗑️</button>
+        ${
+          !n.expedido
+            ? `
+              <button onclick="editar(${n.id})">✏️</button>
+              <button onclick="excluir(${n.id})">🗑️</button>
+            `
+            : ""
+        }
+
+       <button class="btn-expedir" onclick="alternarExpedido(${n.id}, ${n.expedido})">
+         ${n.expedido ? "✅ EXPEDIDO" : "🚚 EXPEDIR"}
+       </button>
+
       </div>
     `;
 
@@ -99,14 +106,13 @@ function render() {
 }
 
 /* ==========================
-   CARREGAR NOTAS (SELECT)
+   CARREGAR NOTAS
 ========================== */
 async function carregarNotas() {
   const { data, error } = await supabaseClient
     .from('relatorios_expedicao')
     .select('*')
-    .order('created_at', { ascending: false })
-    .limit(50); // 🔥 evita travamento no mobile
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error(error);
@@ -122,7 +128,6 @@ async function carregarNotas() {
    ADICIONAR / EDITAR
 ========================== */
 btnAdicionar.onclick = async () => {
-
   if (!cliente.value || !nf.value || !pedido.value || !volumes.value || !valor.value || !caixa.value) {
     mostrarToast("Preencha todos os campos", "aviso");
     return;
@@ -154,7 +159,6 @@ btnAdicionar.onclick = async () => {
 
     mostrarToast("Nota atualizada", "sucesso");
     editId = null;
-
   } else {
     const { error } = await supabaseClient
       .from('relatorios_expedicao')
@@ -164,7 +168,8 @@ btnAdicionar.onclick = async () => {
         pedido: pedido.value,
         volumes: volumes.value,
         valor: Number(valor.value),
-        caixa: caixa.value
+        caixa: caixa.value,
+        expedido: false
       }]);
 
     if (error) {
@@ -198,7 +203,8 @@ window.editar = (id) => {
    EXCLUIR
 ========================== */
 window.excluir = async (id) => {
-  mostrarToast("Excluindo nota...", "aviso");
+  const confirmar = confirm("Deseja realmente excluir esta nota?");
+  if (!confirmar) return;
 
   const { error } = await supabaseClient
     .from('relatorios_expedicao')
@@ -211,7 +217,30 @@ window.excluir = async (id) => {
     return;
   }
 
-  mostrarToast("Nota excluída", "sucesso");
+  mostrarToast("Nota excluída", "aviso");
+  carregarNotas();
+};
+
+/* ==========================
+   EXPEDIR (TOGGLE)
+========================== */
+window.alternarExpedido = async (id, estadoAtual) => {
+  const { error } = await supabaseClient
+    .from("relatorios_expedicao")
+    .update({ expedido: !estadoAtual })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    mostrarToast("Erro ao atualizar expedição", "erro");
+    return;
+  }
+
+  mostrarToast(
+    !estadoAtual ? "Nota expedida 🚚" : "Expedição desfeita",
+    "sucesso"
+  );
+
   carregarNotas();
 };
 
@@ -224,31 +253,27 @@ btnPDF.onclick = () => {
     return;
   }
 
-  mostrarToast("Gerando PDF...", "aviso");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
 
-  setTimeout(() => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+  doc.text("Relatório de Expedição", 14, 16);
+  doc.text(`Data de emissão: ${new Date().toLocaleDateString("pt-BR")}`, 14, 22);
 
-    doc.text("Relatório de Expedição", 14, 16);
-    doc.text(`Data de emissão: ${new Date().toLocaleDateString("pt-BR")}`, 14, 22);
+  doc.autoTable({
+    startY: 30,
+    head: [["Cliente", "Data", "NF", "Pedido", "Volumes", "Caixa", "Valor"]],
+    body: notas.map(n => [
+      n.cliente,
+      new Date(n.created_at).toLocaleDateString("pt-BR"),
+      n.nf,
+      n.pedido,
+      n.volumes,
+      n.caixa,
+      formatarMoeda(n.valor)
+    ])
+  });
 
-    doc.autoTable({
-      startY: 30,
-      head: [["Cliente", "Data", "NF", "Pedido", "Volumes", "Caixa", "Valor"]],
-      body: notas.map(n => [
-        n.cliente,
-        new Date(n.created_at).toLocaleDateString("pt-BR"),
-        n.nf,
-        n.pedido,
-        n.volumes,
-        n.caixa,
-        formatarMoeda(n.valor)
-      ])
-    });
-
-    doc.save("relatorio-expedicao.pdf");
-  }, 100);
+  doc.save("relatorio-expedicao.pdf");
 };
 
 /* ==========================

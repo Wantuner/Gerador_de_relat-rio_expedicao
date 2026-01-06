@@ -243,3 +243,46 @@ select:focus {
 .icone-titulo {
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
 }
+
+/* ==========================
+   CARD EXPEDIDO (LEGÍVEL)
+========================== */
+.nota-card.expedido {
+  background: rgba(76, 175, 80, 0.08); /* verde MUITO sutil */
+  border-left: 6px solid #4CAF50;
+  position: relative;
+}
+
+/* Selo visual */
+.nota-card.expedido::before {
+  content: "EXPEDIDO";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(76, 175, 80, 0.15);
+  color: #2e7d32;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* Garantia de contraste */
+.nota-card.expedido strong,
+.nota-card.expedido div {
+  color: inherit;
+}
+
+/* Botão EXPEDIR */
+.btn-expedir {
+  background: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.nota-card.expedido .btn-expedir {
+  background: #4CAF50;
+  color: #fff;
+}
