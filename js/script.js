@@ -65,21 +65,6 @@ btnLimpar.onclick = () => {
 /* ==========================
    RENDER
 ========================== */
-function criarLinha(label, valor) {
-  const div = document.createElement("div");
-
-  const strong = document.createElement("strong");
-  strong.textContent = label + " ";
-
-  const span = document.createElement("span");
-  span.textContent = valor;
-
-  div.appendChild(strong);
-  div.appendChild(span);
-
-  return div;
-}
-
 function render() {
   listaNotas.innerHTML = "";
 
@@ -88,48 +73,33 @@ function render() {
     card.className = "nota-card";
     if (n.expedido) card.classList.add("expedido");
 
-    const nome = document.createElement("strong");
-    nome.textContent = n.cliente;
+    const dataFormatada = new Date(n.created_at).toLocaleDateString("pt-BR");
 
-    const data = document.createElement("div");
-    data.className = "data-nota";
-    data.textContent = "📅 " + new Date(n.created_at).toLocaleDateString("pt-BR");
+    card.innerHTML = `
+      <strong>${n.cliente}</strong>
+      <div class="data-nota">📅 ${dataFormatada}</div>
+      <div><strong>NF:</strong> ${n.nf}</div>
+      <div><strong>Pedido:</strong> ${n.pedido}</div>
+      <div><strong>Volumes:</strong> ${n.volumes}</div>
+      <div><strong>Caixa:</strong> ${n.caixa}</div>
+      <div class="valor">${formatarMoeda(n.valor)}</div>
 
-    const valor = document.createElement("div");
-    valor.className = "valor";
-    valor.textContent = formatarMoeda(n.valor);
+      <div class="nota-acoes">
+        ${
+          !n.expedido
+            ? `
+              <button onclick="editar(${n.id})">✏️</button>
+              <button onclick="excluir(${n.id})">🗑️</button>
+            `
+            : ""
+        }
 
-    const acoes = document.createElement("div");
-    acoes.className = "nota-acoes";
+       <button class="btn-expedir" onclick="alternarExpedido(${n.id}, ${n.expedido})">
+         ${n.expedido ? "✅ EXPEDIDO" : "🚚 EXPEDIR"}
+       </button>
 
-    if (!n.expedido) {
-      const btnEditar = document.createElement("button");
-      btnEditar.textContent = "✏️";
-      btnEditar.onclick = () => editar(n.id);
-
-      const btnExcluir = document.createElement("button");
-      btnExcluir.textContent = "🗑️";
-      btnExcluir.onclick = () => excluir(n.id);
-
-      acoes.appendChild(btnEditar);
-      acoes.appendChild(btnExcluir);
-    }
-
-    const btnExpedir = document.createElement("button");
-    btnExpedir.className = "btn-expedir";
-    btnExpedir.textContent = n.expedido ? "✅ EXPEDIDO" : "🚚 EXPEDIR";
-    btnExpedir.onclick = () => alternarExpedido(n.id, n.expedido);
-
-    acoes.appendChild(btnExpedir);
-
-    card.appendChild(nome);
-    card.appendChild(data);
-    card.appendChild(criarLinha("NF:", n.nf));
-    card.appendChild(criarLinha("Pedido:", n.pedido));
-    card.appendChild(criarLinha("Volumes:", n.volumes));
-    card.appendChild(criarLinha("Caixa:", n.caixa));
-    card.appendChild(valor);
-    card.appendChild(acoes);
+      </div>
+    `;
 
     listaNotas.appendChild(card);
   });
@@ -310,3 +280,22 @@ btnPDF.onclick = () => {
    INIT
 ========================== */
 carregarNotas();
+
+/* ==========================
+   REALTIME SUPABASE
+========================== */
+supabaseClient
+  .channel('realtime-notas')
+  .on(
+    'postgres_changes',
+    {
+      event: '*', // INSERT | UPDATE | DELETE
+      schema: 'public',
+      table: 'relatorios_expedicao'
+    },
+    payload => {
+      console.log("Mudança detectada:", payload);
+      carregarNotas(); // recarrega lista
+    }
+  )
+  .subscribe();
