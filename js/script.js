@@ -1,13 +1,7 @@
 /* ==========================
    SUPABASE
 ========================== */
-const supabaseUrl = 'https://tljfrgxcplqfzxxilriw.supabase.co';
-const supabaseKey = 'sb_publishable_KNzNTWkUthMHca4_jfKzNw_rUYvbFtl';
-
-const supabaseClient = window.supabase.createClient(
-  supabaseUrl,
-  supabaseKey
-);
+const supabaseClient = window.supabaseClient;
 
 /* ==========================
    ELEMENTOS
@@ -22,12 +16,32 @@ const caixa = document.getElementById("caixa");
 const btnAdicionar = document.getElementById("btnAdicionar");
 const btnLimpar = document.getElementById("btnLimpar");
 const btnPDF = document.getElementById("btnPDF");
+const btnLogout = document.getElementById("btnLogout");
+const usuarioLogado = document.getElementById("usuarioLogado");
 
 const listaNotas = document.getElementById("listaNotas");
 const toast = document.getElementById("toast");
 
 let notas = [];
 let editId = null;
+
+/* ==========================
+   AUTH GUARD
+========================== */
+async function validarSessao() {
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error || !data.session) {
+    window.location.href = "login.html";
+    return null;
+  }
+  return data.session;
+}
+
+function obterNomeExibicao(user) {
+  const email = user?.email || "";
+  if (email.includes("@")) return email.split("@")[0];
+  return "Usuario";
+}
 
 /* ==========================
    FORMATADOR DE MOEDA
@@ -61,6 +75,13 @@ btnLimpar.onclick = () => {
   caixa.value = "";
   editId = null;
 };
+
+if (btnLogout) {
+  btnLogout.onclick = async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = "login.html";
+  };
+}
 
 /* ==========================
    RENDER
@@ -279,7 +300,16 @@ btnPDF.onclick = () => {
 /* ==========================
    INIT
 ========================== */
-carregarNotas();
+(async () => {
+  const session = await validarSessao();
+  if (!session) return;
+
+  if (usuarioLogado) {
+    usuarioLogado.textContent = obterNomeExibicao(session.user);
+  }
+
+  carregarNotas();
+})();
 
 /* ==========================
    REALTIME SUPABASE
