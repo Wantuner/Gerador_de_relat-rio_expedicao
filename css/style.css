@@ -286,3 +286,63 @@ select:focus {
   background: #4CAF50;
   color: #fff;
 }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#usuarioLogado {
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.26);
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
+}
+
+#usuarioLogado:empty {
+  display: none;
+}
+
+#btnLogout {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.auth-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-main {
+  width: 100%;
+  max-width: 460px;
+}
+
+.auth-card {
+  padding: 24px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  #usuarioLogado {
+    max-width: 165px;
+  }
+}
