@@ -107,6 +107,17 @@ input::placeholder {
   font-size: 16px;
 }
 
+.tempo-expedicao {
+  align-self: flex-end;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .nota-card .valor {
   margin-top: auto;
   font-weight: bold;
@@ -272,6 +283,12 @@ select:focus {
 .nota-card.expedido strong,
 .nota-card.expedido div {
   color: inherit;
+}
+
+.nota-card.expedido .tempo-expedicao {
+  background: rgba(76, 175, 80, 0.12);
+  border-color: rgba(76, 175, 80, 0.35);
+  color: #2e7d32;
 }
 
 /* Botão EXPEDIR */

@@ -43,6 +43,20 @@ function obterNomeExibicao(user) {
   return "Usuario";
 }
 
+function calcularDiasNaExpedicao(dataCriacao) {
+  const hoje = new Date();
+  const dataNota = new Date(dataCriacao);
+
+  const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const dataNotaZerada = new Date(dataNota.getFullYear(), dataNota.getMonth(), dataNota.getDate());
+  const diferencaMs = hojeZerado - dataNotaZerada;
+  const dias = Math.max(0, Math.floor(diferencaMs / 86400000));
+
+  if (dias === 0) return "Hoje na expedição";
+  if (dias === 1) return "1 dia na expedição";
+  return `${dias} dias na expedição`;
+}
+
 /* ==========================
    FORMATADOR DE MOEDA
 ========================== */
@@ -95,6 +109,7 @@ function render() {
     if (n.expedido) card.classList.add("expedido");
 
     const dataFormatada = new Date(n.created_at).toLocaleDateString("pt-BR");
+    const diasNaExpedicao = calcularDiasNaExpedicao(n.created_at);
 
     card.innerHTML = `
       <strong>${n.cliente}</strong>
@@ -104,6 +119,7 @@ function render() {
       <div><strong>Volumes:</strong> ${n.volumes}</div>
       <div><strong>Caixa:</strong> ${n.caixa}</div>
       <div class="valor">${formatarMoeda(n.valor)}</div>
+      <div class="tempo-expedicao">${diasNaExpedicao}</div>
 
       <div class="nota-acoes">
         ${
